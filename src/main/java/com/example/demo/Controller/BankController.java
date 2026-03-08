@@ -1,13 +1,12 @@
 package com.example.demo.Controller;
 
-
-
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.example.demo.Entity.Transaction;
 import com.example.demo.Entity.User;
 import com.example.demo.Service.BankService;
 
@@ -19,65 +18,102 @@ public class BankController {
     @Autowired
     private BankService bankService;
 
-    // REGISTER
+
+    // ================= REGISTER =================
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody User user) {
-
-        User savedUser = bankService.register(user);
-
-        if(savedUser != null){
-            return ResponseEntity.ok("Registration Successful");
-        }
-
-        return ResponseEntity.badRequest().body("Registration Failed");
+    public String register(@RequestBody User user){
+        bankService.register(user);
+        return "Registration Successful";
     }
 
-    // LOGIN
+
+    // ================= LOGIN =================
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody Map<String,String> req){
-
-        String username = req.get("username");
-        String password = req.get("password");
-
-        User user = bankService.login(username, password);
-
-        if(user != null){
-            return ResponseEntity.ok(user);
-        }
-
-        return ResponseEntity.status(401).body("Invalid Login");
+    public User login(@RequestBody Map<String,String> req){
+        return bankService.login(req.get("username"), req.get("password"));
     }
 
-    // DEPOSIT
+
+    // ================= DEPOSIT =================
     @PostMapping("/deposit")
-    public ResponseEntity<?> deposit(@RequestBody Map<String,Object> req){
+    public String deposit(@RequestBody Map<String,String> req){
 
-        int userId = Integer.parseInt(req.get("userId").toString());
-        double amount = Double.parseDouble(req.get("amount").toString());
+        int userId = Integer.parseInt(req.get("userId"));
+        double amount = Double.parseDouble(req.get("amount"));
 
-        String result = bankService.deposit(userId, amount);
-
-        return ResponseEntity.ok(result);
+        return bankService.deposit(userId, amount);
     }
 
-    // WITHDRAW
+
+    // ================= WITHDRAW =================
     @PostMapping("/withdraw")
-    public ResponseEntity<?> withdraw(@RequestBody Map<String,Object> req){
+    public String withdraw(@RequestBody Map<String,String> req){
 
-        int userId = Integer.parseInt(req.get("userId").toString());
-        double amount = Double.parseDouble(req.get("amount").toString());
+        int userId = Integer.parseInt(req.get("userId"));
+        double amount = Double.parseDouble(req.get("amount"));
 
-        String result = bankService.withdraw(userId, amount);
-
-        return ResponseEntity.ok(result);
+        return bankService.withdraw(userId, amount);
     }
+
+
+    // ================= CHECK BALANCE =================
+    @GetMapping("/balance/{userId}")
+    public double getBalance(@PathVariable int userId){
+        return bankService.getBalance(userId);
+    }
+
+
+    // ================= TRANSACTION HISTORY =================
+    @GetMapping("/transactions/{userId}")
+    public List<Transaction> getTransactions(@PathVariable int userId){
+        return bankService.getTransactions(userId);
+    }
+
+
+    // ================= TRANSFER MONEY =================
+    @PostMapping("/transfer")
+    public String transfer(@RequestBody Map<String,String> req){
+
+        int senderId = Integer.parseInt(req.get("senderId"));
+        String receiverUsername = req.get("receiverUsername");
+        double amount = Double.parseDouble(req.get("amount"));
+
+        return bankService.transferMoney(senderId, receiverUsername, amount);
+    }
+
+
+    // ================= RESET PASSWORD =================
     @PostMapping("/resetPassword")
     public String resetPassword(@RequestBody Map<String,String> req){
 
         String username = req.get("username");
         String password = req.get("password");
 
-        return bankService.resetPassword(username,password);
+        return bankService.resetPassword(username, password);
+    }
+
+
+    // =========================================================
+    // ================= QR CODE PAYMENT =======================
+    // =========================================================
+
+    // 1️⃣ Generate QR Code for a user
+    @GetMapping("/generateQR/{userId}")
+    public String generateQR(@PathVariable int userId){
+
+        return bankService.generateQRCode(userId);
+    }
+
+
+    // 2️⃣ Pay using QR Code
+    @PostMapping("/payQR")
+    public String payUsingQR(@RequestBody Map<String,String> req){
+
+        int senderId = Integer.parseInt(req.get("senderId"));
+        int receiverId = Integer.parseInt(req.get("receiverId"));
+        double amount = Double.parseDouble(req.get("amount"));
+
+        return bankService.qrPayment(senderId, receiverId, amount);
     }
 
 }

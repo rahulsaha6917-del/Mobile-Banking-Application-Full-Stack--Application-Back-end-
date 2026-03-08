@@ -2,7 +2,11 @@ package com.example.demo.Entity;
 
 
 
+
+
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
+import org.hibernate.annotations.CreationTimestamp;
 
 @Entity
 @Table(name="transactions")
@@ -15,6 +19,12 @@ public class Transaction {
     private int userId;
     private double amount;
     private String type;
+
+    @CreationTimestamp
+    @Column(name="date_time", updatable = false)
+    private LocalDateTime dateTime;
+
+    // Getters and Setters
 
     public int getTransactionId() {
         return transactionId;
@@ -46,5 +56,9 @@ public class Transaction {
 
     public void setType(String type) {
         this.type = type;
+    }
+
+    public LocalDateTime getDateTime() {
+        return dateTime;
     }
 }
