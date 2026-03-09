@@ -15,7 +15,7 @@ import com.example.demo.Service.OtpService;
 
 @RestController
 @RequestMapping("/api/bank")
-@CrossOrigin(origins = "http://127.0.0.1:5500")
+@CrossOrigin(origins = "http://127.0.0.1:5500") // allow frontend
 public class BankController {
 
     @Autowired
@@ -102,6 +102,18 @@ public class BankController {
         return ResponseEntity.ok(transactions);
     }
 
+    // ================= CLEAR TRANSACTION HISTORY =================
+ // ================= CLEAR TRANSACTION HISTORY =================
+    @DeleteMapping("/transactions/{userId}/clear")
+    public ResponseEntity<String> clearTransactionHistory(@PathVariable int userId){
+        boolean cleared = bankService.clearTransactionHistory(userId);
+        if(cleared){
+            return ResponseEntity.ok("Transaction history cleared successfully");
+        } else {
+            return ResponseEntity.badRequest().body("Failed to clear transaction history");
+        }
+    }
+
     // ================= TRANSFER MONEY =================
     @PostMapping("/transfer")
     public ResponseEntity<String> transfer(@RequestBody Map<String,String> req){
@@ -152,5 +164,13 @@ public class BankController {
         String message = req.get("message");
         notificationService.sendEmail(email, "Bank Transaction Alert", message);
         return ResponseEntity.ok("Mail Sent Successfully");
+    }
+
+    // ================= LOGOUT =================
+    @PostMapping("/logout")
+    public ResponseEntity<String> logout(@RequestParam int userId){
+        // Optional: Add logic to invalidate session/JWT if implemented
+        System.out.println("User with ID " + userId + " logged out."); // log action
+        return ResponseEntity.ok("User logged out successfully");
     }
 }
