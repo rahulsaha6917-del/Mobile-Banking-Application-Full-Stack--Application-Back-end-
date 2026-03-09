@@ -1,7 +1,5 @@
 package com.example.demo.Entity;
 
-
-
 import jakarta.persistence.*;
 
 @Entity
@@ -15,6 +13,14 @@ public class User {
     private String username;
     private String password;
     private String email;
+
+    @Column(unique = true)
+    private String phone;
+
+    private String otp;
+    private boolean verified;
+
+    // ================= GETTERS & SETTERS =================
 
     public int getId() {
         return id;
@@ -46,5 +52,29 @@ public class User {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
+    public String getOtp() {
+        return otp;
+    }
+
+    public void setOtp(String otp) {
+        this.otp = otp;
+    }
+
+    public boolean isVerified() {
+        return verified;
+    }
+
+    public void setVerified(boolean verified) {
+        this.verified = verified;
     }
 }
