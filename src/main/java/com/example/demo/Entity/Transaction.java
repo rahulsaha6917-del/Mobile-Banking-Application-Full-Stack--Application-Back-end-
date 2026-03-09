@@ -61,4 +61,9 @@ public class Transaction {
     public LocalDateTime getDateTime() {
         return dateTime;
     }
+
+	public Object getStatus() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

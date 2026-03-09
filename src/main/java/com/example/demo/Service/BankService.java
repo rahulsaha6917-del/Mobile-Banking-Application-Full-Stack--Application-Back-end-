@@ -191,9 +191,10 @@ public class BankService {
 
 
     // Generate QR Code data for a user
+   
     public String generateQRCode(int userId){
 
-        User user = userRepository.findById(userId).orElse(null);
+        User user = userRepository.findById((int) userId).orElse(null);
 
         if(user == null){
             return "User not found";
@@ -201,8 +202,6 @@ public class BankService {
 
         return "BANK_QR_USER_" + userId;
     }
-
-
     // Pay using QR Code
     public String qrPayment(int senderId,int receiverId,double amount){
 

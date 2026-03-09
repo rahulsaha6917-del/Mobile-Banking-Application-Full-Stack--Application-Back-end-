@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import com.example.demo.Entity.Transaction;
 import com.example.demo.Entity.User;
 import com.example.demo.Service.BankService;
+import com.example.demo.Service.NotificationService;
 
 @RestController
 @RequestMapping("/api/bank")
@@ -17,6 +18,9 @@ public class BankController {
 
     @Autowired
     private BankService bankService;
+
+    @Autowired
+    private NotificationService notificationService;
 
 
     // ================= REGISTER =================
@@ -97,15 +101,14 @@ public class BankController {
     // ================= QR CODE PAYMENT =======================
     // =========================================================
 
-    // 1️⃣ Generate QR Code for a user
+    // Generate QR Code
     @GetMapping("/generateQR/{userId}")
     public String generateQR(@PathVariable int userId){
-
         return bankService.generateQRCode(userId);
     }
 
 
-    // 2️⃣ Pay using QR Code
+    // Pay using QR Code
     @PostMapping("/payQR")
     public String payUsingQR(@RequestBody Map<String,String> req){
 
@@ -114,6 +117,26 @@ public class BankController {
         double amount = Double.parseDouble(req.get("amount"));
 
         return bankService.qrPayment(senderId, receiverId, amount);
+    }
+
+
+    // =========================================================
+    // ================= EMAIL NOTIFICATION ====================
+    // =========================================================
+
+    @PostMapping("/sendMail")
+    public String sendMail(@RequestBody Map<String,String> req){
+
+        String email = req.get("email");
+        String message = req.get("message");
+
+        notificationService.sendEmail(
+                email,
+                "Bank Transaction Alert",
+                message
+        );
+
+        return "Mail Sent Successfully";
     }
 
 }
