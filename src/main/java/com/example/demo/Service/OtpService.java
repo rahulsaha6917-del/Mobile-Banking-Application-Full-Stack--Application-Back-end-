@@ -1,7 +1,7 @@
 package com.example.demo.Service;
 
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
-import java.util.Random;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
@@ -17,74 +17,107 @@ public class OtpService {
     private final OtpRepository otpRepository;
     private final RestTemplate restTemplate;
 
-    // Load Fast2SMS API key from application.properties
     @Value("${fast2sms.api.key}")
     private String apiKey;
 
-    // Constructor-based injection
     public OtpService(OtpRepository otpRepository) {
+
         this.otpRepository = otpRepository;
         this.restTemplate = new RestTemplate();
+
     }
 
-    // Generate OTP, save to DB, send SMS
+    // ================= GENERATE OTP =================
     public String generateOtp(String phone) {
-        Random random = new Random();
+
+        if(phone == null || phone.length() < 10){
+            return "Invalid Phone Number";
+        }
+
+        // Prevent OTP spam (allow new OTP after 30 sec)
+        Otp lastOtp = otpRepository.findTopByPhoneOrderByIdDesc(phone);
+
+        if(lastOtp != null){
+
+            LocalDateTime limit = lastOtp.getExpiryTime().minusMinutes(4);
+
+            if(limit.isAfter(LocalDateTime.now())){
+                return "Please wait before requesting another OTP";
+            }
+        }
+
+        // Secure OTP generation
+        SecureRandom random = new SecureRandom();
         int otp = 100000 + random.nextInt(900000);
 
-        // Save OTP in DB
-        Otp o = new Otp();
-        o.setPhone(phone);
-        o.setOtp(String.valueOf(otp));
-        o.setExpiryTime(LocalDateTime.now().plusMinutes(5));
-        otpRepository.save(o);
+        Otp otpEntity = new Otp();
+
+        otpEntity.setPhone(phone);
+        otpEntity.setOtp(String.valueOf(otp));
+        otpEntity.setExpiryTime(LocalDateTime.now().plusMinutes(5));
+
+        otpRepository.save(otpEntity);
 
         try {
-            // Fast2SMS API URL
+
             String url = "https://www.fast2sms.com/dev/bulkV2";
 
-            // Prepare headers
             HttpHeaders headers = new HttpHeaders();
+
             headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.set("authorization", apiKey); // API key from properties
+            headers.set("authorization", apiKey);
 
-            // Prepare JSON payload
-            String jsonPayload = "{"
-                    + "\"route\":\"otp\","
-                    + "\"sender_id\":\"TXTIND\","
-                    + "\"message\":\"Your OTP is " + otp + "\","
-                    + "\"language\":\"english\","
-                    + "\"flash\":0,"
-                    + "\"numbers\":\"" + phone + "\""
-                    + "}";
+            String jsonPayload =
+                    "{"
+                            + "\"route\":\"otp\","
+                            + "\"sender_id\":\"TXTIND\","
+                            + "\"message\":\"Your OTP is " + otp + "\","
+                            + "\"language\":\"english\","
+                            + "\"flash\":0,"
+                            + "\"numbers\":\"" + phone + "\""
+                            + "}";
 
-            HttpEntity<String> entity = new HttpEntity<>(jsonPayload, headers);
+            HttpEntity<String> entity =
+                    new HttpEntity<>(jsonPayload, headers);
 
-            // Send POST request
-            ResponseEntity<String> response = restTemplate.postForEntity(url, entity, String.class);
+            ResponseEntity<String> response =
+                    restTemplate.postForEntity(url, entity, String.class);
 
             System.out.println("SMS Response: " + response.getBody());
+
             return "OTP Sent Successfully";
 
-        } catch (Exception e) {
-            // Log OTP for testing if SMS fails
-            System.out.println("SMS failed, OTP for " + phone + " : " + otp);
-            e.printStackTrace();
-            return "OTP Generated (SMS failed, check console)";
+        }
+        catch (Exception e){
+
+            // For development fallback
+            System.out.println("SMS FAILED — OTP for " + phone + " : " + otp);
+
+            return "OTP Generated (Check Console)";
         }
     }
 
-    // Verify OTP
-    public boolean verifyOtp(String phone, String otp) {
-        // Get the latest OTP for this phone
-        Otp savedOtp = otpRepository.findTopByPhoneOrderByIdDesc(phone);
+    // ================= VERIFY OTP =================
+    public boolean verifyOtp(String phone,String otp){
 
-        if (savedOtp == null) return false;
+        Otp savedOtp =
+                otpRepository.findTopByPhoneOrderByIdDesc(phone);
+
+        if(savedOtp == null)
+            return false;
 
         // Check expiry
-        if (savedOtp.getExpiryTime().isBefore(LocalDateTime.now())) return false;
+        if(savedOtp.getExpiryTime().isBefore(LocalDateTime.now()))
+            return false;
 
         // Check OTP match
-        return savedOtp.getOtp().equals(otp);
+        if(!savedOtp.getOtp().equals(otp))
+            return false;
+
+        // Delete OTP after successful verification
+        otpRepository.delete(savedOtp);
+
+        return true;
     }
+
 }
