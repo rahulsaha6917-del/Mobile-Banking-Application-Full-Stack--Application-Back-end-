@@ -1,14 +1,4 @@
-# Use lightweight Java runtime
-FROM eclipse-temurin:17-jre
-
-# Set working directory
+FROM openjdk:17
 WORKDIR /app
-
-# Copy JAR file
 COPY target/online-banking-backend-0.0.1-SNAPSHOT.jar app.jar
-
-# Expose port
-EXPOSE 9093
-
-# Run application
-ENTRYPOINT ["java","-jar","app.jar"]
+ENTRYPOINT ["java", "-jar", "app.jar"]
